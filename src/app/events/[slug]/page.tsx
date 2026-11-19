@@ -295,7 +295,33 @@ function BookingForm({
       const referenceNumber = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
       const bookingReference = `${prefix}-${year}-${referenceNumber}`;
 
-      // Simulate booking - redirect to confirmation
+      // Send email notification
+      try {
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            bookingReference,
+            customerName: formData.customerName,
+            customerEmail: formData.customerEmail,
+            customerPhone: formData.customerPhone,
+            promptNumber: formData.promptNumber,
+            eventName: event.name,
+            eventDate: event.date,
+            eventVenue: event.venue,
+            ticketCategory,
+            quantity,
+            totalPrice,
+          }),
+        });
+      } catch (emailError) {
+        console.error('Email sending failed:', emailError);
+        // Continue with booking even if email fails
+      }
+
+      // Redirect to confirmation
       router.push(`/confirmation?reference=${bookingReference}&event=${encodeURIComponent(event.name)}&date=${encodeURIComponent(event.date)}&venue=${encodeURIComponent(event.venue)}&ticket=${encodeURIComponent(ticketCategory)}&quantity=${quantity}&total=${totalPrice}&prompt=${encodeURIComponent(formData.promptNumber)}`);
     } catch (error) {
       setError('An error occurred. Please try again.');
