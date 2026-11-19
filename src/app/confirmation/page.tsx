@@ -26,20 +26,25 @@ function ConfirmationContent() {
 
   useEffect(() => {
     const reference = searchParams.get('reference');
+    const event = searchParams.get('event');
+    const date = searchParams.get('date');
+    const venue = searchParams.get('venue');
+    const ticket = searchParams.get('ticket');
+    const quantity = searchParams.get('quantity');
+    const total = searchParams.get('total');
+    const prompt = searchParams.get('prompt');
     
     if (reference) {
-      // Since this is a static site, we'll use the reference from URL
-      // In a real app, this would fetch from an API
       setBooking({
         bookingReference: reference,
         customerName: 'Customer',
-        eventName: 'Event',
-        eventDate: new Date().toISOString(),
-        eventVenue: 'Venue',
-        ticketCategory: 'Ticket',
-        quantity: 1,
-        totalAmount: 0,
-        promptNumber: 'Prompt Number',
+        eventName: event || 'Your selected event',
+        eventDate: date || new Date().toISOString(),
+        eventVenue: venue || 'Event venue',
+        ticketCategory: ticket || 'Selected ticket',
+        quantity: quantity ? parseInt(quantity) : 1,
+        totalAmount: total ? parseInt(total) : 0,
+        promptNumber: prompt || 'Your provided number',
         paymentStatus: 'PENDING PAYMENT',
       });
     }

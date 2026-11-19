@@ -289,27 +289,14 @@ function BookingForm({
     setLoading(true);
 
     try {
-      // Use event id as a placeholder - in real app this would come from database
-      const eventId = event.id;
+      // Generate unique booking reference without database
+      const prefix = 'MUZ';
+      const year = new Date().getFullYear();
+      const referenceNumber = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
+      const bookingReference = `${prefix}-${year}-${referenceNumber}`;
 
-      const res = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          eventId,
-          ticketCategory,
-          quantity,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        router.push(`/confirmation?reference=${data.booking.bookingReference}`);
-      } else {
-        setError(data.error || 'Failed to create booking');
-      }
+      // Simulate booking - redirect to confirmation
+      router.push(`/confirmation?reference=${bookingReference}&event=${encodeURIComponent(event.name)}&date=${encodeURIComponent(event.date)}&venue=${encodeURIComponent(event.venue)}&ticket=${encodeURIComponent(ticketCategory)}&quantity=${quantity}&total=${totalPrice}&prompt=${encodeURIComponent(formData.promptNumber)}`);
     } catch (error) {
       setError('An error occurred. Please try again.');
     } finally {

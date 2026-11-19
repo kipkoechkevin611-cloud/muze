@@ -16,7 +16,7 @@ async function seed() {
     const adminPassword = await bcrypt.hash('admin123', 10);
     const admin = await User.create({
       name: 'Admin User',
-      email: 'admin@example.com',
+      email: 'raicement33@gmail.com',
       password: adminPassword,
       role: 'admin',
     });
@@ -51,7 +51,7 @@ async function seed() {
 
     console.log('Database seeded successfully!');
     console.log('Admin credentials:');
-    console.log('Email: admin@example.com');
+    console.log('Email: raicement33@gmail.com');
     console.log('Password: admin123');
     process.exit(0);
   } catch (error) {
