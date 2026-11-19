@@ -297,7 +297,7 @@ function BookingForm({
 
       // Send email notification
       try {
-        await fetch('/api/send-email', {
+        const emailResponse = await fetch('/api/send-email', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -316,6 +316,12 @@ function BookingForm({
             totalPrice,
           }),
         });
+
+        if (!emailResponse.ok) {
+          const errorData = await emailResponse.json();
+          console.error('Email API error:', errorData);
+          // Continue with booking even if email fails, but log it
+        }
       } catch (emailError) {
         console.error('Email sending failed:', emailError);
         // Continue with booking even if email fails
