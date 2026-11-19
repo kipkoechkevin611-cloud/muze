@@ -108,12 +108,14 @@ function ConfirmationContent() {
               <span className="text-gray-800">Venue:</span>
               <span className="font-semibold text-black">{booking?.eventVenue || 'Event venue'}</span>
             </div>
-            <div className="flex justify-between py-3 border-b">
-              <span className="text-gray-800">Ticket Category:</span>
-              <span className="font-semibold text-black">{booking?.ticketCategory || 'Selected ticket'}</span>
+            <div className="py-3 border-b">
+              <span className="text-gray-800 block mb-2">Tickets:</span>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-sm text-gray-800 whitespace-pre-line">{booking?.ticketCategory || 'Selected ticket'}</p>
+              </div>
             </div>
             <div className="flex justify-between py-3 border-b">
-              <span className="text-gray-800">Quantity:</span>
+              <span className="text-gray-800">Total Quantity:</span>
               <span className="font-semibold text-black">{booking?.quantity || 0}</span>
             </div>
             <div className="flex justify-between py-3 border-b">
