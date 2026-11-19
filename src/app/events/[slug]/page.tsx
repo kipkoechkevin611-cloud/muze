@@ -12,8 +12,7 @@ export default function EventDetailPage() {
   const router = useRouter();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedTicket, setSelectedTicket] = useState<string>('');
-  const [quantity, setQuantity] = useState(1);
+  const [ticketQuantities, setTicketQuantities] = useState<Record<string, number>>({});
   const [showBookingForm, setShowBookingForm] = useState(false);
 
   useEffect(() => {
@@ -21,15 +20,12 @@ export default function EventDetailPage() {
     const eventData = getEventBySlug(params.slug as string);
     if (eventData) {
       setEvent(eventData);
-      // Select first available ticket by default
-      if (eventData.ticketCategories.length > 0) {
-        const firstAvailable = eventData.ticketCategories.find(
-          (tc) => tc.availableQuantity > 0
-        );
-        if (firstAvailable) {
-          setSelectedTicket(firstAvailable.name);
-        }
-      }
+      // Initialize ticket quantities to 0
+      const initialQuantities: Record<string, number> = {};
+      eventData.ticketCategories.forEach((tc) => {
+        initialQuantities[tc.name] = 0;
+      });
+      setTicketQuantities(initialQuantities);
     }
     setLoading(false);
   }, [params.slug]);
@@ -44,20 +40,39 @@ export default function EventDetailPage() {
     });
   };
 
-  const getSelectedTicketCategory = () => {
-    if (!event || !selectedTicket) return null;
-    return event.ticketCategories.find((tc) => tc.name === selectedTicket);
+  const getTotalPrice = () => {
+    if (!event) return 0;
+    let total = 0;
+    event.ticketCategories.forEach((tc) => {
+      const qty = ticketQuantities[tc.name] || 0;
+      total += tc.price * qty;
+    });
+    return total;
   };
 
-  const selectedTicketCategory = getSelectedTicketCategory();
-  const availableQuantity = selectedTicketCategory
-    ? selectedTicketCategory.availableQuantity
-    : 0;
-  const totalPrice = selectedTicketCategory ? selectedTicketCategory.price * quantity : 0;
+  const getTotalQuantity = () => {
+    return Object.values(ticketQuantities).reduce((sum, qty) => sum + qty, 0);
+  };
+
+  const getSelectedTickets = () => {
+    if (!event) return [];
+    return event.ticketCategories
+      .filter((tc) => ticketQuantities[tc.name] > 0)
+      .map((tc) => ({
+        name: tc.name,
+        quantity: ticketQuantities[tc.name],
+        price: tc.price,
+        total: tc.price * ticketQuantities[tc.name],
+      }));
+  };
+
+  const selectedTickets = getSelectedTickets();
+  const totalPrice = getTotalPrice();
+  const totalQuantity = getTotalQuantity();
 
   const handleBookTicket = () => {
-    if (!selectedTicket || quantity < 1 || quantity > availableQuantity) {
-      alert('Please select a valid ticket and quantity');
+    if (totalQuantity < 1) {
+      alert('Please select at least one ticket');
       return;
     }
     setShowBookingForm(true);
@@ -145,24 +160,24 @@ export default function EventDetailPage() {
             <div className="bg-gray-50 p-6 rounded-lg shadow-sm">
               <h2 className="text-xl font-semibold mb-4 text-black">Select Tickets</h2>
               
-              <div className="space-y-3 mb-6">
+              <div className="space-y-4 mb-6">
                 {event.ticketCategories.map((ticket) => {
                   const available = ticket.availableQuantity;
                   const isAvailable = available > 0;
+                  const qty = ticketQuantities[ticket.name] || 0;
                   
                   return (
                     <div
                       key={ticket.name}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedTicket === ticket.name
+                      className={`p-4 border rounded-lg transition-colors ${
+                        qty > 0
                           ? 'border-blue-600 bg-blue-50'
                           : isAvailable
                           ? 'border-gray-300 hover:border-blue-400'
-                          : 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
+                          : 'border-gray-200 bg-gray-100 opacity-50'
                       }`}
-                      onClick={() => isAvailable && setSelectedTicket(ticket.name)}
                     >
-                      <div className="flex justify-between items-start">
+                      <div className="flex justify-between items-start mb-3">
                         <div>
                           <h3 className="font-semibold text-black">{ticket.name}</h3>
                           {ticket.description && (
@@ -178,34 +193,61 @@ export default function EventDetailPage() {
                           </p>
                         </div>
                       </div>
+                      
+                      {isAvailable && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-700">Quantity:</span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                if (qty > 0) {
+                                  setTicketQuantities({ ...ticketQuantities, [ticket.name]: qty - 1 });
+                                }
+                              }}
+                              className="w-8 h-8 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors text-black"
+                              disabled={qty === 0}
+                            >
+                              -
+                            </button>
+                            <span className="w-10 text-center font-semibold text-black">{qty}</span>
+                            <button
+                              onClick={() => {
+                                if (qty < available) {
+                                  setTicketQuantities({ ...ticketQuantities, [ticket.name]: qty + 1 });
+                                }
+                              }}
+                              className="w-8 h-8 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors text-black"
+                              disabled={qty >= available}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
 
-              {selectedTicketCategory && (
-                <div className="border-t pt-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <label className="font-semibold text-black">Quantity:</label>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="w-10 h-10 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
-                      >
-                        -
-                      </button>
-                      <span className="w-12 text-center font-semibold">{quantity}</span>
-                      <button
-                        onClick={() => setQuantity(Math.min(availableQuantity, quantity + 1))}
-                        className="w-10 h-10 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
-                      >
-                        +
-                      </button>
-                    </div>
+              {totalQuantity > 0 && (
+                <div className="border-t pt-4 space-y-3">
+                  {/* Selected Tickets Summary */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="font-semibold text-black mb-3">Your Selection:</h3>
+                    {selectedTickets.map((ticket) => (
+                      <div key={ticket.name} className="flex justify-between text-sm mb-2">
+                        <span className="text-gray-800">
+                          {ticket.quantity}x {ticket.name}
+                        </span>
+                        <span className="font-semibold text-black">
+                          KES {ticket.total.toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
                   </div>
 
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-gray-800">Total:</span>
+                  <div className="flex justify-between items-center pt-2">
+                    <span className="text-lg font-semibold text-black">Total:</span>
                     <span className="text-2xl font-bold text-blue-600">
                       KES {totalPrice.toLocaleString()}
                     </span>
@@ -213,10 +255,9 @@ export default function EventDetailPage() {
 
                   <button
                     onClick={handleBookTicket}
-                    disabled={quantity < 1 || quantity > availableQuantity}
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
                   >
-                    BOOK TICKET
+                    BOOK TICKETS ({totalQuantity})
                   </button>
                 </div>
               )}
@@ -244,8 +285,7 @@ export default function EventDetailPage() {
 
               <BookingForm
                 event={event}
-                ticketCategory={selectedTicket}
-                quantity={quantity}
+                selectedTickets={selectedTickets}
                 totalPrice={totalPrice}
                 onClose={() => setShowBookingForm(false)}
               />
@@ -261,14 +301,12 @@ export default function EventDetailPage() {
 
 function BookingForm({
   event,
-  ticketCategory,
-  quantity,
+  selectedTickets,
   totalPrice,
   onClose,
 }: {
   event: Event;
-  ticketCategory: string;
-  quantity: number;
+  selectedTickets: Array<{ name: string; quantity: number; price: number; total: number }>;
   totalPrice: number;
   onClose: () => void;
 }) {
@@ -277,7 +315,6 @@ function BookingForm({
     customerPhone: '',
     customerEmail: '',
     promptNumber: '',
-    notes: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -295,6 +332,9 @@ function BookingForm({
       const referenceNumber = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
       const bookingReference = `${prefix}-${year}-${referenceNumber}`;
 
+      // Format selected tickets for email
+      const ticketsSummary = selectedTickets.map(t => `${t.quantity}x ${t.name} (KES ${t.total.toLocaleString()})`).join(', ');
+
       // Send email notification
       try {
         const emailResponse = await fetch('/api/send-email', {
@@ -311,8 +351,8 @@ function BookingForm({
             eventName: event.name,
             eventDate: event.date,
             eventVenue: event.venue,
-            ticketCategory,
-            quantity,
+            ticketCategory: ticketsSummary,
+            quantity: selectedTickets.reduce((sum, t) => sum + t.quantity, 0),
             totalPrice,
           }),
         });
@@ -328,7 +368,7 @@ function BookingForm({
       }
 
       // Redirect to confirmation
-      router.push(`/confirmation?reference=${bookingReference}&event=${encodeURIComponent(event.name)}&date=${encodeURIComponent(event.date)}&venue=${encodeURIComponent(event.venue)}&ticket=${encodeURIComponent(ticketCategory)}&quantity=${quantity}&total=${totalPrice}&prompt=${encodeURIComponent(formData.promptNumber)}`);
+      router.push(`/confirmation?reference=${bookingReference}&event=${encodeURIComponent(event.name)}&date=${encodeURIComponent(event.date)}&venue=${encodeURIComponent(event.venue)}&ticket=${encodeURIComponent(ticketsSummary)}&quantity=${selectedTickets.reduce((sum, t) => sum + t.quantity, 0)}&total=${totalPrice}&prompt=${encodeURIComponent(formData.promptNumber)}`);
     } catch (error) {
       setError('An error occurred. Please try again.');
     } finally {
@@ -359,10 +399,15 @@ function BookingForm({
           <p><span className="text-gray-700">Event:</span> {event.name}</p>
           <p><span className="text-gray-700">Date:</span> {formatDate(event.date)}</p>
           <p><span className="text-gray-700">Venue:</span> {event.venue}</p>
-          <p><span className="text-gray-700">Ticket:</span> {ticketCategory}</p>
-          <p><span className="text-gray-700">Quantity:</span> {quantity}</p>
-          <p><span className="text-gray-700">Price per ticket:</span> KES {(totalPrice / quantity).toLocaleString()}</p>
-          <p className="font-bold text-lg text-black"><span className="text-gray-700">Total:</span> KES {totalPrice.toLocaleString()}</p>
+          <div className="border-t pt-2 mt-2">
+            <p className="font-semibold text-black mb-2">Tickets:</p>
+            {selectedTickets.map((ticket) => (
+              <p key={ticket.name} className="text-gray-800">
+                <span className="text-gray-700">{ticket.quantity}x {ticket.name}</span> - KES {ticket.total.toLocaleString()}
+              </p>
+            ))}
+          </div>
+          <p className="font-bold text-lg text-black mt-2"><span className="text-gray-700">Total:</span> KES {totalPrice.toLocaleString()}</p>
         </div>
       </div>
 
@@ -434,18 +479,6 @@ function BookingForm({
               </button>
             )}
           </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-black mb-1">
-            Notes (Optional)
-          </label>
-          <textarea
-            value={formData.notes}
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-white placeholder-gray-500"
-          />
         </div>
       </div>
 

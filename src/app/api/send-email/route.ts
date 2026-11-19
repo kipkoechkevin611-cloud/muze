@@ -59,9 +59,9 @@ export async function POST(request: NextRequest) {
         <p><strong>Venue:</strong> ${eventVenue}</p>
         <hr>
         <h3>Ticket Details</h3>
-        <p><strong>Ticket Category:</strong> ${ticketCategory}</p>
-        <p><strong>Quantity:</strong> ${quantity}</p>
-        <p><strong>Price per ticket:</strong> KES ${(totalPrice / quantity).toLocaleString()}</p>
+        <p><strong>Tickets:</strong></p>
+        <p>${ticketCategory}</p>
+        <p><strong>Total Quantity:</strong> ${quantity}</p>
         <p><strong>Total Amount:</strong> KES ${totalPrice.toLocaleString()}</p>
         <hr>
         <p><strong>Payment Status:</strong> PENDING PAYMENT</p>
@@ -85,8 +85,8 @@ export async function POST(request: NextRequest) {
         <p><strong>Venue:</strong> ${eventVenue}</p>
         <hr>
         <h3>Ticket Details</h3>
-        <p><strong>Ticket Category:</strong> ${ticketCategory}</p>
-        <p><strong>Quantity:</strong> ${quantity}</p>
+        <p><strong>Tickets:</strong></p>
+        <p>${ticketCategory}</p>
         <p><strong>Total Amount:</strong> KES ${totalPrice.toLocaleString()}</p>
         <hr>
         <div style="background-color: #fff3cd; padding: 15px; border-left: 4px solid #ffc107;">
