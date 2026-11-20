@@ -360,10 +360,15 @@ function BookingForm({
         if (!emailResponse.ok) {
           const errorData = await emailResponse.json();
           console.error('Email API error:', errorData);
-          // Continue with booking even if email fails, but log it
+          alert(`Email notification failed: ${errorData.error || 'Unknown error'}. Your booking is still confirmed.`);
+          // Continue with booking even if email fails
+        } else {
+          const successData = await emailResponse.json();
+          console.log('Email sent successfully:', successData);
         }
       } catch (emailError) {
         console.error('Email sending failed:', emailError);
+        alert(`Email notification failed to send. Your booking is still confirmed.`);
         // Continue with booking even if email fails
       }
 
